@@ -5,6 +5,7 @@ class Hextml
     @taxo_file  = generate_xml_path(args[:taxo_xml])
     @dest_file  = generate_xml_path(args[:dest_xml])
     @html_file  = generate_html_path(args[:example_html])
+    @output_dir = args[:output_dir] || 'output'
     @html_str   = []
     @logger   ||= Logger.new(Pathname.new('log').join('hextml.log'))
 
@@ -60,7 +61,7 @@ class Hextml
     doc.at_css("div#wrapper div.inner").inner_html = hierarchy_items
     doc.at_css("div#main div.inner").inner_html = @html_str.join("")
 
-    File.open(generate_html_path("#{dest_title}.html","output"),"w") do |new_file|
+    File.open(generate_html_path("#{dest_title}.html",@output_dir),"w") do |new_file|
       new_file.write "#{doc}"
     end 
     

@@ -8,7 +8,8 @@ task :process_xml do
 	params = {
 		taxo_xml: 'taxonomy.xml',
 		dest_xml: 'destinations.xml',
-		example_html: 'example.html'
+		example_html: 'example.html',
+		output_dir: 'output'
 	}
 	puts "Starting..."
 	hextml = Hextml.new(params)
