@@ -1,5 +1,5 @@
 class Hextml
-  attr_accessor :prev_node, :hier_hash, :child_str
+  attr_accessor :prev_node, :atlas_id_map, :child_str
 
   def initialize(args={})
     @taxo_file  = generate_xml_path(args[:taxo_xml])
@@ -14,6 +14,7 @@ class Hextml
   def prepare_batch
     @example_html = parse_html(@html_file)
     read_content  = false
+    @atlas_id_map  = {}
     parse_as_reader(@dest_file).each do |node|
 
       dest_title = node.attribute('title')
@@ -22,12 +23,13 @@ class Hextml
         @html_str << prepare_subtitle(node.name) if node.name != '#text' && node.name != '#cdata-section' && node.name != @prev_node
         @html_str << "<p>#{node.value}</p>"
       end
-
       if node.name == 'destination'
-        read_content = content_status(read_content)
+        @atlas_id_map[atlas_id] = dest_title unless @atlas_id_map[atlas_id]
+        read_content = content_status(read_content)        
         @html_str = prepare_destination_html(dest_title,atlas_id) if @html_str.any?
       end
     end
+    
   end
 
   def prepare_hierarchy(atlas_id)
@@ -35,7 +37,8 @@ class Hextml
     child_str = []
     elems = doc.search "node[atlas_node_id='#{atlas_id}']"
     elems.each do |node|
-      parent_node_id = "#{node.attribute('atlas_node_id')}"  
+      parent_node = node.parent.first
+      child_str << @atlas_id_map[parent_node[1]] if parent_node
       node.children.each do |child|
         if child.name == "node" || child.name == "node_name"
           child.content.split("\n").each do | child_row |
@@ -44,13 +47,12 @@ class Hextml
         end
       end
     end
-    #puts "Hier: #{child_str.inspect}"
     hierarchy_list(child_str)
   end
 
   def prepare_destination_html(dest_title,atlas_id)
     doc = parse_html(@html_file)
-    puts "Atlas ID: #{atlas_id}"
+    @logger.info "Preparing HTML for destination: #{dest_title}"
     hierarchy_items = prepare_hierarchy(atlas_id)
 
     doc.at_css("div#container h1").inner_html = "Lonely Planet: #{dest_title}"
@@ -81,9 +83,6 @@ protected
       return_str << "<li><a href='#{el}.html'>#{el}</a></li>"
     end
     return_str << '</ul>'
-    #hierarchy_items =  "<ul>"
-    #hierarchy_items = hier_hash.each(&method(:hash_to_html))
-    #hierarchy_items = "</ul>
   end
 
   def content_status(state)
@@ -112,18 +111,5 @@ protected
 
   def parse_as_reader(file_path)
     Nokogiri::XML::Reader(File.open(file_path))
-  end
-
-  def hash_to_html_list(key,value)
-     if value.nil?
-       puts "<li>#{key}</li>"
-     elsif value.is_a?(Hash)
-       puts "<li>#{key}"
-       puts "<ul>"
-       value.each(&method(:hash_to_html))
-       puts "</ul></li>"
-     else
-       fail "Failed with a #{value.class}"
-     end
   end
 end # Hextml
