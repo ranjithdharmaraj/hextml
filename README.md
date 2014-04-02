@@ -15,6 +15,7 @@ Each generated web page has:
    For example, China should have a link to Beijing.
 
 The batch processor should take the location of the two input files and the output directory as parameters.
+However there is a limitation, since the html's requires 'css' to generate readable web pages currently output folder is dedicated to 'output'.
 
 
 Execution
